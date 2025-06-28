@@ -82,4 +82,9 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')
             ->with('success', 'Cliente excluído com sucesso.');
     }
+
+    public function apiIndex()
+    {
+        return response()->json(Customer::select(['id', 'nome'])->get());
+    }
 }

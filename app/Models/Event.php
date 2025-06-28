@@ -16,6 +16,8 @@ class Event extends Model
         'end',
         'color',
         'user_id',
+        'event_type_id',
+        'customer_id',
     ];
 
     protected $casts = [
@@ -26,5 +28,15 @@ class Event extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function eventType()
+    {
+        return $this->belongsTo(EventType::class);
+    }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
     }
 }
