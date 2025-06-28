@@ -346,6 +346,13 @@ return [
             'active' => ['customers*'],
         ],
         [
+            'text' => 'Tipos de Evento',
+            'url' => 'event-types',
+            'icon' => 'fas fa-tags',
+            'can' => 'manage-event-types',
+            'active' => ['event-types*'],
+        ],
+        [
             'text' => 'Gerenciar Usuários',
             'url' => 'users', 
             'icon' => 'fas fa-users', 

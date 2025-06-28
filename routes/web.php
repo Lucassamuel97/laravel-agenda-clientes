@@ -40,7 +40,8 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/api/events/{event}', [EventController::class, 'update'])->name('events.update');
     Route::delete('/api/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
 
-    Route::get('/event-types', [EventTypeController::class, 'index'])->name('event-types.index');
+    Route::get('/event-types-api', [EventTypeController::class, 'apiIndex'])->name('event-types.apiIndex');
+    Route::resource('event-types', EventTypeController::class);
     Route::get('/customers-api', [CustomerController::class, 'apiIndex'])->name('customers.apiIndex');
 
     // Rotas para gerenciamento de usuários

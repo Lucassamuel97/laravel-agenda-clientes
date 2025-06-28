@@ -90,7 +90,7 @@
             // Função para carregar tipos de evento
             function loadEventTypes() {
                 $.ajax({
-                    url: '{{ route('event-types.index') }}',
+                    url: '{{ route('event-types.apiIndex') }}',
                     type: 'GET',
                     success: function(data) {
                         eventTypes = data;
