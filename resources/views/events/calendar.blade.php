@@ -224,13 +224,16 @@
                     $('#eventModalLabel').text('Adicionar Novo Evento');
                     $('#eventId').val('');
                     $('#eventForm')[0].reset();
-                    // Preenche com a seleção, formatando para o input datetime-local
-                    $('#eventStart').val(moment(info.startStr).format('YYYY-MM-DDTHH:mm'));
-                    $('#eventEnd').val(moment(info.endStr).format('YYYY-MM-DDTHH:mm'));
+
+                    // Define hora padrão como 08:00
+                    var startDate = moment(info.startStr).set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
+                    var endDate = moment(startDate).add(1, 'hour');
+
+                    $('#eventStart').val(startDate.format('YYYY-MM-DDTHH:mm'));
+                    $('#eventEnd').val(endDate.format('YYYY-MM-DDTHH:mm'));
                     $('#deleteEventBtn').hide();
                     $('#eventModal').modal('show');
                 },
-
                 eventDrop: function(info) {
                     var eventData = {
                         title: info.event.title,
