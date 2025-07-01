@@ -51,4 +51,8 @@ Route::middleware(['auth'])->group(function () {
 
     // Rotas para o gerenciamento de clientes
     Route::resource('customers', CustomerController::class);
+
+    Route::get('/whatsapp/qrcode', [App\Http\Controllers\WhatsAppController::class, 'showQrCode'])->name('whatsapp.qrcode');
+    Route::get('/whatsapp/get-qrcode', [App\Http\Controllers\WhatsAppController::class, 'getQrCode'])->name('whatsapp.get_qrcode');
+
 });

@@ -323,6 +323,18 @@ return [
         ],
         ['header' => 'Gerenciamento'],
         [
+            'text' => 'WhatsApp',
+            'icon' => 'fab fa-fw fa-whatsapp',
+            'submenu' => [
+                [
+                    'text' => 'QR Code',
+                    'url' => 'whatsapp/qrcode',
+                    'icon' => 'fas fa-fw fa-qrcode',
+                    'active' => ['whatsapp/qrcode*'],
+                ],
+            ],
+        ],
+        [
             'text' => 'Calendário',
             'url' => 'calendar',
             'icon' => 'fas fa-fw fa-calendar-alt',
