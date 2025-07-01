@@ -1,0 +1,120 @@
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-28T18:13:05.198Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-28T18:13:05.201Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-28T18:13:05.201Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-28T18:19:18.298Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-28T18:19:18.300Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-28T18:19:18.300Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-28T18:31:31.732Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-28T18:31:31.734Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-28T18:31:31.734Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-28T18:33:43.038Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-28T18:33:43.040Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-28T18:33:43.040Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-28T18:35:07.306Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-28T18:35:07.308Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-28T18:35:07.308Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-30T13:46:58.200Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-30T13:46:58.209Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-30T13:46:58.209Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-30T18:39:11.169Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-30T18:39:11.171Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-30T18:39:11.171Z'
+}
+{
+  message: 'Server is running on port: 21465',
+  level: 'info',
+  timestamp: '2025-06-30T18:49:30.913Z'
+}
+{
+  message: '\x1B[31m Visit http://localhost:21465/api-docs for Swagger docs',
+  level: 'info',
+  timestamp: '2025-06-30T18:49:30.916Z'
+}
+{
+  message: 'WPPConnect-Server version: 2.8.6',
+  level: 'info',
+  timestamp: '2025-06-30T18:49:30.916Z'
+}
