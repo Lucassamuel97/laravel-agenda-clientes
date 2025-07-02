@@ -1,11 +1,12 @@
 <?php
 
+use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EventController;
+use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\CustomerController;
-use App\Http\Controllers\EventTypeController;
+use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -24,7 +25,7 @@ Route::get('/', function () {
 });
 
 Auth::routes([
-    'register' => false, 
+    'register' => false,
 ]);
 
 Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -52,7 +53,13 @@ Route::middleware(['auth'])->group(function () {
     // Rotas para o gerenciamento de clientes
     Route::resource('customers', CustomerController::class);
 
-    Route::get('/whatsapp/qrcode', [App\Http\Controllers\WhatsAppController::class, 'showQrCode'])->name('whatsapp.qrcode');
-    Route::get('/whatsapp/get-qrcode', [App\Http\Controllers\WhatsAppController::class, 'getQrCode'])->name('whatsapp.get_qrcode');
-
+    // Rotas para o WhatsApp
+    Route::prefix('whatsapp')->name('whatsapp.')->group(function () {
+        Route::get('qrcode', [WhatsAppController::class, 'showQrCode'])->name('qrcode.show');
+        Route::post('get-qrcode', [WhatsAppController::class, 'getQrCode'])->name('qrcode.get');
+        Route::post('logout', [WhatsAppController::class, 'logoutSession'])->name('session.logout');
+    });
 });
+
+// Rota para o Webhook do WPPConnect
+Route::post('whatsapp/webhook', [WhatsAppController::class, 'handleWebhook'])->name('whatsapp.webhook');

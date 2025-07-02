@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendWhatsAppNotification;
 use App\Models\Event;
 use App\Models\EventType;
 use App\Models\Customer;
@@ -65,29 +66,17 @@ class EventController extends Controller
                 $message .= "*Início:* {$start}\n";
                 $message .= "*Fim:* {$end}\n";
                 $message .= "Aguardamos você!";
-
-                $apiUrl = config('whatsapp.api_url');
-                $sessionName = config('whatsapp.session_name');
-                $secretKey = config('whatsapp.secret_key');
-
-                $token = Cache::get("whatsapp_token_{$sessionName}");
-
+                // Enviar mensagem via WPPConnect Serve
+                $phoneNumber = "55{$phoneNumber}"; // Adiciona o código do país (55 para Brasil)
                 try {
-                    $response = Http::withHeaders([
-                        'Authorization' => 'Bearer ' . $token,
-                    ])->post("{$apiUrl}/api/{$sessionName}/send-message", [
-                        'session' => $sessionName,
-                        'phone' => '5542991585738',
-                        'isGroup' => false,
-                        'isNewsletter' => false,
-                        'isLid' => false,
-                        'message' => $message
-                    ]);
+                    SendWhatsAppNotification::dispatch($phoneNumber, $message);
                 } catch (\Exception $e) {
-                    // Logar o erro, mas não impedir o salvamento do evento
-                    \Log::error('Erro ao enviar mensagem WhatsApp: ' . $e->getMessage());
+                    // Lida com o erro, por exemplo, logando
+                    \Log::error('Erro ao despachar job: ' . $e->getMessage());
                 }
             }
+        }else{
+            dd($event->event_type_id, $atendimentoTypeId);
         }
 
         return response()->json($event);

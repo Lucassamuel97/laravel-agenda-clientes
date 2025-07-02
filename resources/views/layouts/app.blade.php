@@ -7,6 +7,10 @@
     @hasSection('subtitle') | @yield('subtitle') @endif
 @stop
 
+@section('meta_tags')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+@stop
+
 {{-- Extend and customize the page content header --}}
 
 @section('content_header')
