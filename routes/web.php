@@ -5,6 +5,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\QueueMonitorController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\WhatsAppController;
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,14 @@ Route::middleware(['auth'])->group(function () {
         Route::get('qrcode', [WhatsAppController::class, 'showQrCode'])->name('qrcode.show');
         Route::post('get-qrcode', [WhatsAppController::class, 'getQrCode'])->name('qrcode.get');
         Route::post('logout', [WhatsAppController::class, 'logoutSession'])->name('session.logout');
+    });
+
+    Route::prefix('queue-monitor')->group(function () {
+        Route::get('/failed', [QueueMonitorController::class, 'failedJobs'])->name('queue.failed_jobs');
+        Route::get('/pending', [QueueMonitorController::class, 'pendingJobs'])->name('queue.pending_jobs'); // Opcional, só para driver 'database'
+        Route::post('/failed/{uuid}/retry', [QueueMonitorController::class, 'retryFailedJob'])->name('queue.retry_failed_job');
+        Route::delete('/failed/{uuid}/forget', [QueueMonitorController::class, 'forgetFailedJob'])->name('queue.forget_failed_job');
+        Route::delete('/failed/flush', [QueueMonitorController::class, 'flushFailedJobs'])->name('queue.flush_failed_jobs');
     });
 });
 
