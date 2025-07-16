@@ -13,9 +13,9 @@ class EventTypeSeeder extends Seeder
      */
     public function run(): void
     {
-        EventType::create(['name' => 'Reunião', 'color' => '#007bff']); // Azul
-        EventType::create(['name' => 'Atendimento', 'color' => '#28a745']); // Verde
-        EventType::create(['name' => 'Lembrete', 'color' => '#ffc107']); // Amarelo
-        EventType::create(['name' => 'Outro', 'color' => '#6c757d']); // Cinza
+        EventType::firstOrCreate(['name' => 'Reunião', 'color' => '#007bff']); // Azul
+        EventType::firstOrCreate(['name' => 'Atendimento', 'color' => '#28a745']); // Verde
+        EventType::firstOrCreate(['name' => 'Lembrete', 'color' => '#ffc107']); // Amarelo
+        EventType::firstOrCreate(['name' => 'Outro', 'color' => '#6c757d']); // Cinza
     }
 }

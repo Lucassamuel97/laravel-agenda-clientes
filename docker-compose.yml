@@ -1,4 +1,4 @@
-version: '3.8'
+# docker-compose.yml (conteúdo completo atualizado)
 
 services:
   app:
@@ -14,9 +14,38 @@ services:
     depends_on:
       - mysql
       - wppconnect
+      - redis # <-- NOVA DEPENDÊNCIA: Redis
+      - soketi  # <-- NOVA DEPENDÊNCIA: Soketi (servidor WebSocket)
     environment:
-      - APP_URL=http://app:8000
-      - WHATSAPP_API_URL=http://wppconnect:21465
+      # Variáveis de ambiente que o contêiner Laravel precisa
+      APP_URL: http://app:8000 # URL interna para comunicação entre contêineres Docker
+      WHATSAPP_API_URL: http://wppconnect:21465 # URL interna para WPPConnect
+
+      # Configurações do Banco de Dados
+      DB_CONNECTION: mysql
+      DB_HOST: mysql # Nome do serviço MySQL no Docker Compose
+      DB_PORT: 3306
+      DB_DATABASE: laravel
+      DB_USERNAME: laravel
+      DB_PASSWORD: secret
+
+      # Configurações do Redis (para Cache, Fila e Broadcast)
+      REDIS_HOST: redis # Nome do serviço Redis no Docker Compose
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-null} # Pode ser nulo se não usar senha, ou defina no .env
+      REDIS_PORT: 6379
+      
+      # Configurações das Filas
+      QUEUE_CONNECTION: redis # <-- MUDEI PARA REDIS
+
+      # Configurações do Broadcasting
+      BROADCAST_DRIVER: pusher # Usaremos o driver Pusher que aponta para o Soketi
+      PUSHER_APP_ID: '12345' # ID do aplicativo Pusher/Soketi (pode ser qualquer n��mero)
+      PUSHER_APP_KEY: ${PUSHER_APP_KEY} # Chave do aplicativo Pusher/Soketi (deve vir do .env)
+      PUSHER_APP_SECRET: ${PUSHER_APP_SECRET} # Segredo do aplicativo Pusher/Soketi (deve vir do .env)
+      PUSHER_HOST: soketi # Nome do serviço Soketi no Docker Compose
+      PUSHER_PORT: 6001
+      PUSHER_SCHEME: http # Use 'https' se você configurar SSL para o Soketi
+
     command: php artisan serve --host=0.0.0.0 --port=8000
 
   mysql:
@@ -44,7 +73,31 @@ services:
       - wppconnect_tokens:/usr/src/wpp-server/wppconnect_tokens
     environment:
       - NODE_ENV=production
+  # Se você usa SECRET_KEY no WPPConnect-Server, defina aqui também
+  # - WPP_OPTIONS_CONFIG_SECRETKEY=${WHATSAPP_SECRET_KEY} # Exemplo, lendo do .env do host
+
+  redis: # <-- NOVO SERVIÇO: Redis
+    image: 'redis:latest' # Imagem oficial do Redis
+    container_name: redis-server
+    ports:
+      - '6379:6379' # Mapeia a porta Redis para o host (opcional, mas útil para debug)
+    volumes:
+      - redis_data:/data # Volume para persistir os dados do Redis
+
+  soketi: # <-- NOVO SERVIÇO: Soketi (Servidor WebSocket)
+    image: 'quay.io/soketi/soketi:latest-16-alpine' # Versão estável com Node 16 (compatível com Alpine)
+    container_name: soketi-server
+    environment:
+      SOKETI_DEFAULT_APP_ID: '12345'
+      SOKETI_DEFAULT_APP_KEY: 'SamucaPusherKey'
+      SOKETI_DEFAULT_APP_SECRET: 'SamucaPusherSecret'
+      SOKETI_DEFAULT_APP_NAME: 'Laravel'
+      SOKETI_DEFAULT_APP_CLUSTER: 'mt1'
+    ports:
+      - '6001:6001' # Porta principal do WebSocket para o host
+      - '9601:9601' # Porta do Dashboard HTTP para o host (opcional, mas recomendado para debug)
 
 volumes:
   mysql_data:
   wppconnect_tokens:
+  redis_data: # <-- NOVO VOLUME: para persistência dos dados do Redis

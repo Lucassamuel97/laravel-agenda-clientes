@@ -50,6 +50,7 @@
 @stop
 
 {{-- Add common Javascript/Jquery code --}}
+@vite('resources/js/app.js')
 
 @push('js')
 <script>

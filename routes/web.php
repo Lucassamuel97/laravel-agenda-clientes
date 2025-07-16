@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\EventTypeController;
@@ -67,6 +68,13 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/failed/{uuid}/retry', [QueueMonitorController::class, 'retryFailedJob'])->name('queue.retry_failed_job');
         Route::delete('/failed/{uuid}/forget', [QueueMonitorController::class, 'forgetFailedJob'])->name('queue.forget_failed_job');
         Route::delete('/failed/flush', [QueueMonitorController::class, 'flushFailedJobs'])->name('queue.flush_failed_jobs');
+    });
+
+    Route::prefix('chats')->group(function () {
+        Route::get('/', [ChatController::class, 'index'])->name('chats.index');
+        Route::get('/{chat}', [ChatController::class, 'show'])->name('chats.show');
+        Route::post('/{chat}/send', [ChatController::class, 'sendMessage'])->name('chats.send_message');
+        Route::get('/media/{messageId}', [ChatController::class, 'downloadMedia'])->name('chats.download_media');
     });
 });
 

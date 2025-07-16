@@ -6,6 +6,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\Chat;
+use App\Models\Message;
+use App\Events\NewMessage;
+use App\Events\MessageStatusUpdated;
+use Carbon\Carbon;
 
 class WhatsAppController extends Controller
 {
@@ -70,14 +75,13 @@ class WhatsAppController extends Controller
                 if ($currentWppStatus === 'CONNECTED') {
                     Cache::put(self::STATUS_CACHE_KEY, 'connected', now()->addHours(24));
                     return response()->json(['success' => true, 'status' => 'connected', 'message' => 'Sessão já está conectada.']);
-                }
-                elseif ($currentWppStatus === 'qrcode' && $currentQrCode) {
-                     Cache::put(self::STATUS_CACHE_KEY, 'waiting_qr', now()->addMinutes(5));
-                     return response()->json([
-                         'success' => true,
-                         'qrcode' => $currentQrCode,
-                         'message' => 'Sessão existente, aguardando leitura do QR Code.'
-                     ]);
+                } elseif ($currentWppStatus === 'qrcode' && $currentQrCode) {
+                    Cache::put(self::STATUS_CACHE_KEY, 'waiting_qr', now()->addMinutes(5));
+                    return response()->json([
+                        'success' => true,
+                        'qrcode' => $currentQrCode,
+                        'message' => 'Sessão existente, aguardando leitura do QR Code.'
+                    ]);
                 }
             } else {
                 Log::warning('WPPConnect: Falha ao verificar status da sessão com token existente. Tentando iniciar/reiniciar.', $statusResponse->json() ?? ['body' => $statusResponse->body()]);
@@ -98,9 +102,9 @@ class WhatsAppController extends Controller
             $startSessionResponse = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
             ])->post("{$this->apiUrl}/api/{$this->sessionName}/start-session", [
-                'webhook' => $webhookUrl,
-                'waitQrCode' => true
-            ]);
+                        'webhook' => $webhookUrl,
+                        'waitQrCode' => true
+                    ]);
 
             Log::info('WPPConnect start-session final response:', $startSessionResponse->json() ?? ['body' => $startSessionResponse->body()]);
 
@@ -187,18 +191,12 @@ class WhatsAppController extends Controller
 
     /**
      * Envia uma mensagem de texto via WhatsApp.
-     *
-     * @param string $phoneNumber O número de telefone para o qual enviar (com código do país, ex: 5542998300659)
-     * @param string $message O texto da mensagem a ser enviada.
-     * @param bool $isGroup Indica se o destinatário é um grupo.
-     * @return array Resposta do envio da mensagem (sucesso ou erro).
      */
     public function sendMessage(string $phoneNumber, string $message, bool $isGroup = false): array
     {
         $token = Cache::get(self::TOKEN_CACHE_KEY);
         $status = Cache::get(self::STATUS_CACHE_KEY);
 
-        // 1. Verificar se há uma sessão conectada e um token válido
         if (!$token || $status !== 'connected') {
             Log::warning("WhatsApp: Tentativa de enviar mensagem sem token ou sessão desconectada. Status atual: {$status}");
             return [
@@ -211,12 +209,10 @@ class WhatsAppController extends Controller
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
             ])->post("{$this->apiUrl}/api/{$this->sessionName}/send-message", [
-                'phone' => $phoneNumber,
-                'isGroup' => $isGroup,
-                'message' => $message,
-                // 'isNewsletter' => false, // Opcionais, remova se não for usar
-                // 'isLid' => false,        // Opcionais, remova se não for usar
-            ]);
+                        'phone' => $phoneNumber,
+                        'isGroup' => $isGroup,
+                        'message' => $message,
+                    ]);
 
             Log::info('WPPConnect: Resposta do envio de mensagem:', $response->json() ?? ['body' => $response->body()]);
 
@@ -249,7 +245,6 @@ class WhatsAppController extends Controller
         }
     }
 
-
     /**
      * Manipula os webhooks recebidos do WPPConnect-Server.
      */
@@ -258,75 +253,189 @@ class WhatsAppController extends Controller
         $payload = $request->all();
         $session = $payload['session'] ?? null;
         $eventType = $payload['event'] ?? null;
-        $status = $payload['status'] ?? null;
 
-        Log::info("Webhook recebido para a sessão '{$session}'. Evento: '{$eventType}'. Status: '{$status}'", $payload);
+        Log::info("Webhook recebido para a sessão '{$session}'. Evento: '{$eventType}'.", $payload);
 
         if ($session !== $this->sessionName) {
             Log::warning("Webhook recebido para sessão inválida: '{$session}'");
             return response()->json(['status' => 'ignored', 'message' => 'Sessão inválida.'], 200);
         }
 
+        switch ($eventType) {
+            case 'onmessage':
+                $this->handleOnMessage($payload);
+                break;
+
+            case 'onack':
+                $this->handleOnAck($payload);
+                break;
+
+            case 'onStateChange':
+                $this->handleStateChange($payload);
+                break;
+
+            // Outros eventos podem ser tratados aqui
+            default:
+                Log::info("WPPConnect: Webhook com evento '{$eventType}' não tratado.");
+                break;
+        }
+
+        return response()->json(['status' => 'success'], 200);
+    }
+
+    /**
+     * Trata o evento 'onmessage'.
+     */
+    private function handleOnMessage(array $data)
+    {
+        $chatId = $data['chatId'] ?? null;
+        if (!$chatId) return;
+
+        $isGroup = $data['isGroupMsg'] ?? false;
+        $senderName = $data['sender']['name'] ?? $data['sender']['pushname'] ?? $data['from'];
+
+        // 1. Encontrar ou criar o chat
+        $chat = Chat::firstOrCreate(
+            ['whatsapp_id' => $chatId],
+            [
+                'name' => $senderName,
+                'type' => $isGroup ? 'group' : 'individual',
+            ]
+        );
+
+        // 2. Melhorar o nome do chat se necessário
+        if ($isGroup && ($chat->name === null || str_contains($chat->name, '@g.us'))) {
+            $groupInfo = $this->getGroupInfo($chatId);
+            $chat->name = $groupInfo['name'] ?? $data['notifyName'] ?? $chat->name;
+        } elseif (!$isGroup && ($chat->name === null || str_contains($chat->name, '@c.us'))) {
+            $contactInfo = $this->getContactInfo($data['from']);
+            $chat->name = $contactInfo['name'] ?? $senderName;
+        }
+        $chat->last_message_at = Carbon::createFromTimestamp($data['t']);
+        $chat->save();
+
+        // 3. Salvar a mensagem
+        $message = Message::firstOrCreate(
+            ['whatsapp_message_id' => $data['id']],
+            [
+                'chat_id' => $chat->id,
+                'from_whatsapp_id' => $data['from'],
+                'to_whatsapp_id' => $data['to'],
+                'from_me' => $data['fromMe'],
+                'body' => $data['body'] ?? $data['caption'] ?? null,
+                'type' => $data['type'] ?? 'chat',
+                'timestamp' => Carbon::createFromTimestamp($data['t']),
+                'ack' => $data['ack'] ?? 0,
+            ]
+        );
+
+        // 4. Disparar evento para notificar o frontend
+        if ($message->wasRecentlyCreated) {
+            broadcast(new NewMessage($message)); // Removido toOthers() para que o próprio remetente também receba
+            Log::info("Mensagem salva e evento NewMessage disparado.", ['message_id' => $message->id]);
+        }
+    }
+
+    /**
+     * Trata o evento 'onack'.
+     */
+    private function handleOnAck(array $data)
+    {
+        $messageId = $data['id']['_serialized'] ?? null;
+        $ack = $data['ack'] ?? null;
+
+        if ($messageId && $ack !== null) {
+            $message = Message::where('whatsapp_message_id', $messageId)->first();
+            if ($message) {
+                $message->update(['ack' => $ack]);
+                broadcast(new MessageStatusUpdated($message))->toOthers();
+                Log::info("Status da mensagem atualizado e evento MessageStatusUpdated disparado.", ['message_id' => $messageId, 'ack' => $ack]);
+            }
+        }
+    }
+
+    /**
+     * Trata o evento 'onStateChange'.
+     */
+    private function handleStateChange(array $payload)
+    {
+        $state = $payload['state'] ?? null;
         $newStatus = null;
 
-        switch ($eventType) {
-            case 'onStateChange':
-                $state = $payload['state'] ?? null;
-                switch ($state) {
-                    case 'CONNECTED':
-                    case 'qrReadSuccess':
-                    case 'isLogged':
-                        $newStatus = 'connected';
-                        break;
-                    case 'qrReadFail':
-                    case 'notLogged':
-                    case 'CLOSED':
-                    case 'DISCONNECTED':
-                        $newStatus = 'disconnected';
-                        Cache::forget(self::TOKEN_CACHE_KEY);
-                        break;
-                    case 'qrcode':
-                        $newStatus = 'waiting_qr';
-                        break;
-                    default:
-                        Log::warning("WPPConnect: onStateChange com status desconhecido: '{$state}'");
-                        break;
-                }
+        switch ($state) {
+            case 'CONNECTED':
+            case 'qrReadSuccess':
+            case 'isLogged':
+                $newStatus = 'connected';
                 break;
-
-            case 'qrCode':
-                $newStatus = 'waiting_qr';
-                break;
-
-            case 'onPresenceChanged':
-                Log::info("WPPConnect: Evento onPresenceChanged recebido, não altera o status principal da sessão.");
-                break;
-
-            case 'onAuth':
-                $authStatus = $payload['status'] ?? null;
-                if ($authStatus === 'AUTHENTICATED') {
-                    $newStatus = 'connected';
-                } elseif ($authStatus === 'UNPAIRED') {
-                    $newStatus = 'disconnected';
-                    Cache::forget(self::TOKEN_CACHE_KEY);
-                }
-                break;
-
-            case 'onDisconnect':
+            case 'qrReadFail':
+            case 'notLogged':
+            case 'CLOSED':
+            case 'DISCONNECTED':
                 $newStatus = 'disconnected';
                 Cache::forget(self::TOKEN_CACHE_KEY);
                 break;
-
+            case 'qrcode':
+                $newStatus = 'waiting_qr';
+                break;
             default:
-                Log::info("WPPConnect: Webhook recebido com evento '{$eventType}', não altera o status principal da sessão.");
+                Log::warning("WPPConnect: onStateChange com status desconhecido: '{$state}'");
                 break;
         }
 
         if ($newStatus) {
             Cache::put(self::STATUS_CACHE_KEY, $newStatus, now()->addHours(24));
-            Log::info("Cache de status atualizado via webhook para '{$newStatus}' para a sessão '{$session}'.");
+            Log::info("Cache de status atualizado via webhook para '{$newStatus}'.");
         }
+    }
 
-        return response()->json(['status' => 'success'], 200);
+    /**
+     * Obtém informações de um contato via API do WPPConnect.
+     */
+    private function getContactInfo(string $contactId): array
+    {
+        $token = Cache::get(self::TOKEN_CACHE_KEY);
+        if (!$token) return [];
+
+        try {
+            $response = Http::withHeaders(['Authorization' => 'Bearer ' . $token])
+                ->get("{$this->apiUrl}/api/{$this->sessionName}/contact/{$contactId}");
+
+            if ($response->successful()) {
+                return $response->json();
+            }
+        } catch (\Exception $e) {
+            Log::error("Falha ao buscar informações do contato {$contactId}", ['error' => $e->getMessage()]);
+        }
+        return [];
+    }
+
+    /**
+     * Obtém informações de um grupo via API do WPPConnect.
+     */
+    private function getGroupInfo(string $groupId): array
+    {
+        $token = Cache::get(self::TOKEN_CACHE_KEY);
+        if (!$token) return [];
+
+        try {
+            $response = Http::withHeaders(['Authorization' => 'Bearer ' . $token])
+                ->get("{$this->apiUrl}/api/{$this->sessionName}/list-chats");
+
+            if ($response->successful()) {
+                $chats = $response->json();
+                foreach ($chats as $chat) {
+                    if (($chat['id']['_serialized'] ?? null) === $groupId) {
+                        return [
+                            'name' => $chat['name'] ?? $chat['contact']['name'] ?? null,
+                            'participants' => $chat['groupMetadata']['participants'] ?? []
+                        ];
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Falha ao buscar informações do grupo {$groupId}", ['error' => $e->getMessage()]);
+        }
+        return [];
     }
 }

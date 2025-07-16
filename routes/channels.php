@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Broadcast;
+use App\Models\Chat;
 
 /*
 |--------------------------------------------------------------------------
@@ -15,4 +16,12 @@ use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
     return (int) $user->id === (int) $id;
+});
+
+// Adiciona a autorização para o canal de chat
+Broadcast::channel('chat.{chatId}', function ($user, $chatId) {
+    // Em um cenário real, você validaria se o usuário pertence a este chat.
+    // Por exemplo: return $user->chats->contains($chatId);
+    // Por enquanto, se o usuário estiver logado, ele pode ouvir o canal.
+    return $user !== null;
 });
