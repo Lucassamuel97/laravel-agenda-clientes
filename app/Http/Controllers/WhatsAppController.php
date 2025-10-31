@@ -24,9 +24,9 @@ class WhatsAppController extends Controller
 
     public function __construct()
     {
-        $this->apiUrl = config('whatsapp.api_url');
-        $this->sessionName = config('whatsapp.session_name');
-        $this->secretKey = config('whatsapp.secret_key');
+        $this->apiUrl = config('whatsapp.api_url') ?? 'http://wppconnect:21465';
+        $this->sessionName = config('whatsapp.session_name') ?? 'sistema-laravel-1';
+        $this->secretKey = config('whatsapp.secret_key') ?? 'SAMUCASISTEMALARAVELTESTE';
     }
 
     /**

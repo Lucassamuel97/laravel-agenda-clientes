@@ -32,13 +32,18 @@ Este projeto já vem com:
 
 ### 1. Pré-requisitos
 
-- [Docker](https://www.docker.com/)
+**Obrigatórios:**
+- [Docker](https://www.docker.com/) e Docker Compose V2
 - [Make](https://www.gnu.org/software/make/)
-- [Node.js e NPM](https://nodejs.org/)
+
+**Opcionais (para compilação de assets):**
+- [Node.js e NPM](https://nodejs.org/) - apenas se for compilar CSS/JS
 
 ---
 
 ### 2. Subir o Projeto
+
+#### Opção 1: Setup Rápido (Recomendado - SEM assets)
 
 Execute no terminal:
 
@@ -48,14 +53,35 @@ make setup
 
 Esse comando irá:
 
-- Subir os containers com Docker
+- Subir os containers com Docker (Laravel, MySQL, Redis, Soketi, WPPConnect)
 - Instalar dependências do Composer
 - Criar o arquivo `.env` se necessário
 - Gerar a chave da aplicação
 - Limpar e cachear as configurações
 - Rodar as migrações e seeders
-- Instalar dependências do NPM
-- Compilar os assets
+
+**⚠️ Este comando NÃO compila assets** (mais rápido, ideal para desenvolvimento de API)
+
+#### Opção 2: Setup Completo (COM assets)
+
+Se você precisa dos assets compilados (CSS/JS):
+
+```bash
+make setup-full
+```
+
+Este comando faz tudo do `setup` + instalação de dependências NPM e compilação de assets.
+
+**Requisito:** Node.js/NPM instalado no host.
+
+#### Compilar Assets Separadamente
+
+Se já fez o setup e quer apenas compilar os assets depois:
+
+```bash
+make assets        # Para desenvolvimento (com watch)
+make assets-prod   # Para produção (minificado)
+```
 
 Após finalizado, a aplicação estará disponível em: [http://localhost:8080](http://localhost:8080)
 
@@ -66,19 +92,56 @@ Após finalizado, a aplicação estará disponível em: [http://localhost:8080](
 
 ## 🛠️ Comandos Úteis
 
-Todos os comandos são executados via `make`.
+Todos os comandos são executados via `make`. Para ver todos os comandos disponíveis:
+
+```bash
+make help
+```
+
+### Comandos Principais
 
 | Comando                | Descrição                                               |
 |------------------------|--------------------------------------------------------|
-| `make setup`           | Realiza a configuração inicial do projeto              |
+| `make help`            | Mostra todos os comandos disponíveis                   |
+| `make setup`           | Setup inicial rápido (SEM assets)                      |
+| `make setup-full`      | Setup completo (COM assets - requer NPM)               |
 | `make up`              | Sobe os containers Docker                              |
 | `make down`            | Para e remove os containers Docker                     |
 | `make stop`            | Apenas para os containers (sem remover)                |
-| `make logs`            | Exibe os logs do serviço (`make logs service=app`)     |
-| `make artisan`         | Executa comandos do Artisan (`make artisan cmd="migrate"`) |
-| `make composer`        | Executa comandos do Composer (`make composer cmd="install"`) |
-| `make npm`             | Executa comandos do NPM (`make npm cmd="run dev"`)     |
-| `make test`            | Executa os testes do PHPUnit                           |
+| `make logs service=app`| Exibe os logs do serviço especificado                  |
+
+### Comandos de Desenvolvimento
+
+| Comando                | Descrição                                               |
+|------------------------|--------------------------------------------------------|
+| `make artisan cmd="migrate"`     | Executa comandos do Artisan            |
+| `make composer cmd="install"`    | Executa comandos do Composer           |
+| `make npm cmd="run dev"`         | Executa comandos do NPM                |
+| `make assets`                    | Compila assets (dev mode)              |
+| `make assets-prod`               | Compila assets (produção)              |
+| `make test`                      | Executa os testes do PHPUnit           |
+
+### Exemplos de Uso
+
+```bash
+# Ver logs do Laravel em tempo real
+make logs service=app
+
+# Criar uma nova migration
+make artisan cmd="make:migration create_posts_table"
+
+# Rodar migrações
+make artisan cmd="migrate"
+
+# Limpar cache
+make artisan cmd="cache:clear"
+
+# Instalar um novo pacote
+make composer cmd="require spatie/laravel-permission"
+
+# Compilar assets e assistir mudanças
+make npm cmd="run dev"
+```
 
 ---
 

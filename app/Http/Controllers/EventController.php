@@ -75,8 +75,6 @@ class EventController extends Controller
                     \Log::error('Erro ao despachar job: ' . $e->getMessage());
                 }
             }
-        }else{
-            dd($event->event_type_id, $atendimentoTypeId);
         }
 
         return response()->json($event);
