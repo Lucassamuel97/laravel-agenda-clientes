@@ -87,6 +87,31 @@
             var eventTypes = [];
             var customers = [];
 
+            // --- Helpers para popular selects (evita duplicação) ---
+            function populateEventTypeSelect(selectedId) {
+                var eventTypeSelect = $('#eventType');
+                eventTypeSelect.empty();
+                eventTypeSelect.append('<option value="">Selecione um tipo</option>');
+                $.each(eventTypes, function(index, type) {
+                    eventTypeSelect.append('<option value="' + type.id + '">' + type.name + '</option>');
+                });
+                if (selectedId) {
+                    eventTypeSelect.val(String(selectedId));
+                }
+            }
+
+            function populateCustomerSelect(selectedId) {
+                var customerSelect = $('#eventCustomer');
+                customerSelect.empty();
+                customerSelect.append('<option value="">Selecione um cliente</option>');
+                $.each(customers, function(index, customer) {
+                    customerSelect.append('<option value="' + customer.id + '">' + (customer.nome || customer.name || customer.full_name || '') + '</option>');
+                });
+                if (selectedId) {
+                    customerSelect.val(String(selectedId));
+                }
+            }
+
             // Função para carregar tipos de evento
             function loadEventTypes() {
                 $.ajax({
@@ -94,12 +119,7 @@
                     type: 'GET',
                     success: function(data) {
                         eventTypes = data;
-                        var eventTypeSelect = $('#eventType');
-                        eventTypeSelect.empty();
-                        eventTypeSelect.append('<option value="">Selecione um tipo</option>');
-                        $.each(eventTypes, function(index, type) {
-                            eventTypeSelect.append('<option value="' + type.id + '">' + type.name + '</option>');
-                        });
+                        populateEventTypeSelect();
                     },
                     error: function(xhr) {
                         console.error('Erro ao carregar tipos de evento:', xhr.responseText);
@@ -114,12 +134,7 @@
                     type: 'GET',
                     success: function(data) {
                         customers = data;
-                        var customerSelect = $('#eventCustomer');
-                        customerSelect.empty();
-                        customerSelect.append('<option value="">Selecione um cliente</option>');
-                        $.each(customers, function(index, customer) {
-                            customerSelect.append('<option value="' + customer.id + '">' + customer.nome + '</option>');
-                        });
+                        populateCustomerSelect();
                     },
                     error: function(xhr) {
                         console.error('Erro ao carregar clientes:', xhr.responseText);
@@ -137,23 +152,13 @@
                     loadEventTypes();
                 } else {
                     // Preenche o select sem nova requisição
-                    var eventTypeSelect = $('#eventType');
-                    eventTypeSelect.empty();
-                    eventTypeSelect.append('<option value="">Selecione um tipo</option>');
-                    $.each(eventTypes, function(index, type) {
-                        eventTypeSelect.append('<option value="' + type.id + '">' + type.name + '</option>');
-                    });
+                    populateEventTypeSelect();
                 }
                 if (customers.length === 0) {
                     loadCustomers();
                 } else {
                     // Preenche o select sem nova requisição
-                    var customerSelect = $('#eventCustomer');
-                    customerSelect.empty();
-                    customerSelect.append('<option value="">Selecione um cliente</option>');
-                    $.each(customers, function(index, customer) {
-                        customerSelect.append('<option value="' + customer.id + '">' + customer.nome + '</option>');
-                    });
+                    populateCustomerSelect();
                 }
             });
 
