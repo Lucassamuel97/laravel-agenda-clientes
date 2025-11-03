@@ -5,6 +5,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\EventTypeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -35,9 +36,13 @@ Route::middleware(['auth'])->group(function () {
     // Rotas para o gerenciamento de eventos
     Route::get('/calendar', [EventController::class, 'index'])->name('events.calendar');
     Route::get('/api/events', [EventController::class, 'getEvents'])->name('api.events');
-    Route::post('/api/events', [EventController::class, 'store']);
-    Route::put('/api/events/{event}', [EventController::class, 'update']);
-    Route::delete('/api/events/{event}', [EventController::class, 'destroy']);
+    Route::post('/api/events', [EventController::class, 'store'])->name('events.store');
+    Route::put('/api/events/{event}', [EventController::class, 'update'])->name('events.update');
+    Route::delete('/api/events/{event}', [EventController::class, 'destroy'])->name('events.destroy');
+
+    Route::get('/event-types-api', [EventTypeController::class, 'apiIndex'])->name('event-types.apiIndex');
+    Route::resource('event-types', EventTypeController::class);
+    Route::get('/customers-api', [CustomerController::class, 'apiIndex'])->name('customers.apiIndex');
 
     // Rotas para gerenciamento de usuários
     Route::resource('users', UserController::class)->middleware('can:viewAny,App\Models\User');

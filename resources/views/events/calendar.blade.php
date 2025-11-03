@@ -58,9 +58,18 @@
                             <input type="datetime-local" class="form-control" id="eventEnd" name="end" required>
                         </div>
                         <div class="form-group">
-                            <label for="eventColor">Cor do Evento</label>
-                            <input type="color" class="form-control" id="eventColor" name="color">
+                            <label for="eventType">Tipo de Evento</label>
+                            <select class="form-control" id="eventType" name="event_type_id" required>
+                                <option value="">Selecione um tipo</option>
+                            </select>
                         </div>
+                        <div class="form-group" id="customerGroup" style="display:none;">
+                            <label for="eventCustomer">Cliente</label>
+                            <select class="form-control" id="eventCustomer" name="customer_id">
+                                <option value="">Selecione um cliente</option>
+                            </select>
+                        </div>
+                        
                         <button type="submit" class="btn btn-primary" id="saveEventBtn">Salvar Evento</button>
                         <button type="button" class="btn btn-danger float-right" id="deleteEventBtn" style="display:none;">Excluir Evento</button>
                     </form>
@@ -75,6 +84,97 @@
         document.addEventListener('DOMContentLoaded', function() {
             var calendarEl = document.getElementById('calendar');
             var calendar;
+            var eventTypes = [];
+            var customers = [];
+
+            // --- Helpers para popular selects (evita duplicação) ---
+            function populateEventTypeSelect(selectedId) {
+                var eventTypeSelect = $('#eventType');
+                eventTypeSelect.empty();
+                eventTypeSelect.append('<option value="">Selecione um tipo</option>');
+                $.each(eventTypes, function(index, type) {
+                    eventTypeSelect.append('<option value="' + type.id + '">' + type.name + '</option>');
+                });
+                if (selectedId) {
+                    eventTypeSelect.val(String(selectedId));
+                }
+            }
+
+            function populateCustomerSelect(selectedId) {
+                var customerSelect = $('#eventCustomer');
+                customerSelect.empty();
+                customerSelect.append('<option value="">Selecione um cliente</option>');
+                $.each(customers, function(index, customer) {
+                    customerSelect.append('<option value="' + customer.id + '">' + (customer.nome || customer.name || customer.full_name || '') + '</option>');
+                });
+                if (selectedId) {
+                    customerSelect.val(String(selectedId));
+                }
+            }
+
+            // Função para carregar tipos de evento
+            function loadEventTypes() {
+                $.ajax({
+                    url: '{{ route('event-types.apiIndex') }}',
+                    type: 'GET',
+                    success: function(data) {
+                        eventTypes = data;
+                        populateEventTypeSelect();
+                    },
+                    error: function(xhr) {
+                        console.error('Erro ao carregar tipos de evento:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Função para carregar clientes
+            function loadCustomers() {
+                $.ajax({
+                    url: '{{ route('customers.apiIndex') }}',
+                    type: 'GET',
+                    success: function(data) {
+                        customers = data;
+                        populateCustomerSelect();
+                    },
+                    error: function(xhr) {
+                        console.error('Erro ao carregar clientes:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Carregar tipos de evento e clientes apenas uma vez e armazenar em arrays
+            loadEventTypes();
+            loadCustomers();
+
+            // Chamar funções de carregamento apenas se os arrays estiverem vazios ao abrir o modal
+            $('#eventModal').on('show.bs.modal', function () {
+                if (eventTypes.length === 0) {
+                    loadEventTypes();
+                } else {
+                    // Preenche o select sem nova requisição
+                    populateEventTypeSelect();
+                }
+                if (customers.length === 0) {
+                    loadCustomers();
+                } else {
+                    // Preenche o select sem nova requisição
+                    populateCustomerSelect();
+                }
+            });
+
+            // Lógica para mostrar/esconder campo de cliente
+            $('#eventType').on('change', function() {
+                var selectedTypeId = $(this).val();
+                var selectedType = eventTypes.find(type => type.id == selectedTypeId);
+                if (selectedType && selectedType.name === 'Atendimento') {
+                    $('#customerGroup').show();
+                    $('#eventCustomer').prop('required', true);
+                } else {
+                    $('#customerGroup').hide();
+                    $('#eventCustomer').prop('required', false);
+                    $('#eventCustomer').val(''); // Limpa a seleção do cliente
+                }
+            });
 
             // Função para pegar a data/hora de um input datetime-local e converter para UTC
             function getUtcDateTimeFromInput(elementId) {
@@ -117,7 +217,10 @@
                     // Exibir as datas no formato local para o input datetime-local
                     $('#eventStart').val(moment(info.event.start).format('YYYY-MM-DDTHH:mm'));
                     $('#eventEnd').val(moment(info.event.end).format('YYYY-MM-DDTHH:mm'));
-                    $('#eventColor').val(info.event.backgroundColor || '#3788d8');
+                    setTimeout(function() {
+                        $('#eventType').val(info.event.extendedProps.event_type_id).trigger('change');
+                        $('#eventCustomer').val(info.event.extendedProps.customer_id).trigger('change');
+                    }, 0);
                     $('#deleteEventBtn').show();
                     $('#eventModal').modal('show');
                 },
@@ -126,18 +229,22 @@
                     $('#eventModalLabel').text('Adicionar Novo Evento');
                     $('#eventId').val('');
                     $('#eventForm')[0].reset();
-                    // Preenche com a seleção, formatando para o input datetime-local
-                    $('#eventStart').val(moment(info.startStr).format('YYYY-MM-DDTHH:mm'));
-                    $('#eventEnd').val(moment(info.endStr).format('YYYY-MM-DDTHH:mm'));
+
+                    // Define hora padrão como 08:00
+                    var startDate = moment(info.startStr).set({ hour: 8, minute: 0, second: 0, millisecond: 0 });
+                    var endDate = moment(startDate).add(1, 'hour');
+
+                    $('#eventStart').val(startDate.format('YYYY-MM-DDTHH:mm'));
+                    $('#eventEnd').val(endDate.format('YYYY-MM-DDTHH:mm'));
                     $('#deleteEventBtn').hide();
                     $('#eventModal').modal('show');
                 },
-
                 eventDrop: function(info) {
                     var eventData = {
                         title: info.event.title,
                         description: info.event.extendedProps.description,
-                        color: info.event.backgroundColor,
+                        event_type_id: info.event.extendedProps.event_type_id,
+                        customer_id: info.event.extendedProps.customer_id,
                         // CONVERTER PARA UTC ANTES DE ENVIAR
                         start: getUtcDateTimeFromEvent(moment(info.event.start)),
                         end: getUtcDateTimeFromEvent(moment(info.event.end)),
@@ -150,7 +257,8 @@
                     var eventData = {
                         title: info.event.title,
                         description: info.event.extendedProps.description,
-                        color: info.event.backgroundColor,
+                        event_type_id: info.event.extendedProps.event_type_id,
+                        customer_id: info.event.extendedProps.customer_id,
                         // CONVERTER PARA UTC ANTES DE ENVIAR
                         start: getUtcDateTimeFromEvent(moment(info.event.start)),
                         end: getUtcDateTimeFromEvent(moment(info.event.end)),
@@ -178,14 +286,16 @@
                 e.preventDefault();
 
                 var eventId = $('#eventId').val();
-                var url = eventId ? '/api/events/' + eventId : '/api/events';
+                var url = eventId ? '{{ route('events.update', ':id') }}'.replace(':id', eventId) : '{{ route('events.store') }}';
                 var method = eventId ? 'PUT' : 'POST';
+
+                console.log("CCustomer: " + $('#eventCustomer').val());
 
                 var eventData = {
                     title: $('#eventTitle').val(),
                     description: $('#eventDescription').val(),
-                    color: $('#eventColor').val(),
-                    // CONVERTER PARA UTC ANTES DE ENVIAR
+                    event_type_id: $('#eventType').val(),
+                    customer_id: $('#eventCustomer').val(),
                     start: getUtcDateTimeFromInput('eventStart'),
                     end: getUtcDateTimeFromInput('eventEnd'),
                     _token: $('meta[name="csrf-token"]').attr('content')
@@ -212,7 +322,7 @@
                 var eventId = $('#eventId').val();
                 if (confirm('Tem certeza que deseja excluir este evento?')) {
                     $.ajax({
-                        url: '/api/events/' + eventId,
+                        url: '{{ route('events.destroy', ':id') }}'.replace(':id', eventId),
                         type: 'DELETE',
                         data: {
                             _token: $('meta[name="csrf-token"]').attr('content')
@@ -232,7 +342,7 @@
 
             function updateEvent(eventId, eventData) {
                 $.ajax({
-                    url: '/api/events/' + eventId,
+                    url: '{{ route('events.update', ':id') }}'.replace(':id', eventId),
                     type: 'PUT',
                     data: eventData,
                     success: function(response) {
