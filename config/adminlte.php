@@ -346,6 +346,12 @@ return [
             'active' => ['customers*'],
         ],
         [
+            'text' => 'Obras',
+            'url' => 'obras',
+            'icon' => 'fas fa-building',
+            'active' => ['obras*', 'cronogramas*'],
+        ],
+        [
             'text' => 'Gerenciar Usuários',
             'url' => 'users', 
             'icon' => 'fas fa-users', 

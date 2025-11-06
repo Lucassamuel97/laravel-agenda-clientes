@@ -5,6 +5,8 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\ObraController;
+use App\Http\Controllers\CronogramaController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -46,4 +48,15 @@ Route::middleware(['auth'])->group(function () {
 
     // Rotas para o gerenciamento de clientes
     Route::resource('customers', CustomerController::class);
+
+    // Rotas para o gerenciamento de obras
+    Route::resource('obras', ObraController::class);
+    
+    // Rotas para o gerenciamento de cronogramas
+    Route::get('/obras/{obra}/cronogramas/create', [CronogramaController::class, 'create'])->name('cronogramas.create');
+    Route::post('/obras/{obra}/cronogramas', [CronogramaController::class, 'store'])->name('cronogramas.store');
+    Route::get('/cronogramas/{cronograma}', [CronogramaController::class, 'show'])->name('cronogramas.show');
+    Route::get('/cronogramas/{cronograma}/editor', [CronogramaController::class, 'editor'])->name('cronogramas.editor');
+    Route::post('/cronogramas/{cronograma}/save-dag', [CronogramaController::class, 'saveDag'])->name('cronogramas.saveDag');
+    Route::delete('/cronogramas/{cronograma}', [CronogramaController::class, 'destroy'])->name('cronogramas.destroy');
 });
