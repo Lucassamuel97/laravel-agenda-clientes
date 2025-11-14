@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class No extends Model
 {
@@ -39,7 +40,7 @@ class No extends Model
     }
 
     /**
-     * Nó pai (dependência)
+     * Nó pai (dependência) - DEPRECATED: usar dependencias()
      */
     public function dependencia(): BelongsTo
     {
@@ -47,7 +48,25 @@ class No extends Model
     }
 
     /**
-     * Nós dependentes deste nó
+     * Todas as dependências deste nó (nós dos quais este depende)
+     */
+    public function dependencias(): BelongsToMany
+    {
+        return $this->belongsToMany(No::class, 'no_dependencias', 'no_id', 'dependencia_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Nós que dependem deste nó
+     */
+    public function dependentesDiretos(): BelongsToMany
+    {
+        return $this->belongsToMany(No::class, 'no_dependencias', 'dependencia_id', 'no_id')
+            ->withTimestamps();
+    }
+
+    /**
+     * Nós dependentes deste nó - DEPRECATED: manter para compatibilidade
      */
     public function dependentes(): HasMany
     {

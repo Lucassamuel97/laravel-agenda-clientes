@@ -6,6 +6,8 @@ use App\Models\Cronograma;
 use App\Models\Obra;
 use App\Models\No;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class CronogramaController extends Controller
 {
@@ -87,7 +89,7 @@ class CronogramaController extends Controller
                 'pos_y' => $nodeData['pos_y'] ?? 0,
                 'responsavel' => !empty($nodeData['responsavel']) ? $nodeData['responsavel'] : null,
                 'custo_estimado' => !empty($nodeData['custo_estimado']) ? $nodeData['custo_estimado'] : null,
-                'dependencia_id' => null, // Será atualizado na segunda passagem
+                'dependencia_id' => null, // Mantido para compatibilidade (será a primeira dependência)
             ]);
 
             // Guardar o mapeamento drawflow_id -> database_id
@@ -96,21 +98,56 @@ class CronogramaController extends Controller
             }
         }
 
-        // Segunda passagem: Atualizar dependências
-        foreach ($validated['nodes'] as $index => $nodeData) {
+        // Segunda passagem: Atualizar TODAS as dependências usando a tabela pivot
+        foreach ($validated['nodes'] as $nodeData) {
             if (isset($nodeData['dependencies']) && !empty($nodeData['dependencies']) && isset($nodeData['drawflow_id'])) {
-                // Pega o primeiro nó de dependência
-                $dependenciaDrawflowId = $nodeData['dependencies'][0];
+                $noId = $nodeMap[$nodeData['drawflow_id']] ?? null;
                 
-                // Encontra o ID do banco de dados correspondente
-                if (isset($nodeMap[$dependenciaDrawflowId]) && isset($nodeMap[$nodeData['drawflow_id']])) {
-                    $noId = $nodeMap[$nodeData['drawflow_id']];
-                    $dependenciaId = $nodeMap[$dependenciaDrawflowId];
-                    
-                    // Atualiza a dependência
-                    No::where('id', $noId)->update([
-                        'dependencia_id' => $dependenciaId
-                    ]);
+                if ($noId) {
+                    try {
+                        $no = No::find($noId);
+                        
+                        if (!$no) {
+                            Log::error("Nó não encontrado: ID {$noId}");
+                            continue;
+                        }
+                        
+                        $dependenciasIds = [];
+                        
+                        // Processar todas as dependências
+                        foreach ($nodeData['dependencies'] as $dependenciaDrawflowId) {
+                            if (isset($nodeMap[$dependenciaDrawflowId])) {
+                                $dependenciasIds[] = $nodeMap[$dependenciaDrawflowId];
+                            }
+                        }
+                        
+                        Log::info("Sincronizando dependências do nó {$noId}: " . json_encode($dependenciasIds));
+                        
+                        // Sincronizar as dependências na tabela pivot
+                        if (!empty($dependenciasIds)) {
+                            // Primeiro, limpar dependências antigas
+                            DB::table('no_dependencias')->where('no_id', $noId)->delete();
+                            
+                            // Depois, inserir as novas
+                            foreach ($dependenciasIds as $depId) {
+                                DB::table('no_dependencias')->insert([
+                                    'no_id' => $noId,
+                                    'dependencia_id' => $depId,
+                                    'created_at' => now(),
+                                    'updated_at' => now(),
+                                ]);
+                            }
+                            
+                            // Atualizar dependencia_id com a primeira dependência (compatibilidade)
+                            $no->update(['dependencia_id' => $dependenciasIds[0]]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error("Erro ao sincronizar dependências do nó {$noId}: " . $e->getMessage());
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Erro ao salvar dependências: ' . $e->getMessage()
+                        ], 500);
+                    }
                 }
             }
         }
@@ -127,8 +164,12 @@ class CronogramaController extends Controller
      */
     public function show(Cronograma $cronograma)
     {
-        $cronograma->load('obra', 'nos.dependencia');
-        return view('cronogramas.show', compact('cronograma'));
+        $cronograma->load('obra', 'nos.dependencias', 'nos.dependencia');
+        
+        // Obter nós ordenados por dependência para a timeline
+        $nosOrdenados = $cronograma->getNosOrdenadosPorDependencia();
+        
+        return view('cronogramas.show', compact('cronograma', 'nosOrdenados'));
     }
 
     /**

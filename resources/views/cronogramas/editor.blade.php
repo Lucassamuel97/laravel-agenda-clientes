@@ -379,15 +379,19 @@
             
             console.log(`Nó ${nodeId} - Data:`, node.data);
             
-            // Encontrar dependências (inputs) deste nó
+            // Encontrar TODAS as dependências (inputs) deste nó
             const dependencies = [];
             if (node.inputs && node.inputs.input_1) {
                 const connections = node.inputs.input_1.connections;
                 if (connections && connections.length > 0) {
-                    // Pega o primeiro nó conectado como dependência principal
-                    dependencies.push(connections[0].node);
+                    // Pegar TODAS as conexões de entrada (múltiplas dependências)
+                    connections.forEach(connection => {
+                        dependencies.push(connection.node);
+                    });
                 }
             }
+            
+            console.log(`Nó ${nodeId} - Dependências:`, dependencies);
             
             nodes.push({
                 drawflow_id: nodeId, // ID original do nó no Drawflow

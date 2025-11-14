@@ -61,7 +61,12 @@
     @if($cronograma->nos->count() > 0)
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Etapas do Cronograma</h3>
+                <h3 class="card-title">
+                    <i class="fas fa-tasks"></i> Etapas do Cronograma
+                </h3>
+                <div class="card-tools">
+                    <span class="badge badge-secondary">{{ $cronograma->nos->count() }} etapas</span>
+                </div>
             </div>
             <div class="card-body p-0">
                 <table class="table table-striped table-hover">
@@ -102,10 +107,12 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($no->dependencia)
-                                        <span class="badge badge-info">
-                                            <i class="fas fa-link"></i> {{ $no->dependencia->nome }}
-                                        </span>
+                                    @if($no->dependencias->count() > 0)
+                                        @foreach($no->dependencias as $dep)
+                                            <span class="badge badge-info">
+                                                <i class="fas fa-link"></i> {{ $dep->nome }}
+                                            </span>
+                                        @endforeach
                                     @else
                                         <span class="text-muted">Sem dependência</span>
                                     @endif
@@ -130,36 +137,63 @@
         <!-- Visualização em Timeline (opcional) -->
         <div class="card">
             <div class="card-header">
-                <h3 class="card-title">Timeline das Etapas</h3>
+                <h3 class="card-title">
+                    <i class="fas fa-stream"></i> Timeline das Etapas (Ordenada por Dependência)
+                </h3>
+                <div class="card-tools">
+                    <span class="badge badge-info">Fluxo sequencial</span>
+                </div>
             </div>
             <div class="card-body">
                 <div class="timeline">
-                    @foreach($cronograma->nos as $no)
+                    @php
+                        $etapaNumero = 1;
+                    @endphp
+                    @foreach($nosOrdenados as $no)
                         <div class="time-label">
-                            <span class="bg-primary">{{ $no->nome }}</span>
+                            <span class="bg-primary">
+                                Etapa {{ $etapaNumero++ }}: {{ $no->nome }}
+                            </span>
                         </div>
                         <div>
                             <i class="fas fa-clock bg-info"></i>
                             <div class="timeline-item">
                                 <h3 class="timeline-header">
+                                    <i class="fas fa-hourglass-half"></i>
                                     Duração: {{ $no->duracao_dias }} {{ $no->duracao_dias == 1 ? 'dia' : 'dias' }}
                                 </h3>
                                 <div class="timeline-body">
                                     @if($no->responsavel)
-                                        <p><strong>Responsável:</strong> {{ $no->responsavel }}</p>
+                                        <p><strong><i class="fas fa-user text-info"></i> Responsável:</strong> {{ $no->responsavel }}</p>
                                     @endif
                                     @if($no->custo_estimado)
-                                        <p><strong>Custo:</strong> R$ {{ number_format($no->custo_estimado, 2, ',', '.') }}</p>
+                                        <p><strong><i class="fas fa-dollar-sign text-success"></i> Custo:</strong> R$ {{ number_format($no->custo_estimado, 2, ',', '.') }}</p>
                                     @endif
-                                    @if($no->dependencia)
-                                        <p><strong>Depende de:</strong> {{ $no->dependencia->nome }}</p>
+                                    @if($no->dependencias->count() > 0)
+                                        <p>
+                                            <strong><i class="fas fa-link text-warning"></i> Depende de:</strong><br>
+                                            @foreach($no->dependencias as $dep)
+                                                <span class="badge badge-warning ml-2">{{ $dep->nome }}</span>
+                                            @endforeach
+                                        </p>
+                                    @else
+                                        <p>
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-flag"></i> Etapa inicial
+                                            </span>
+                                        </p>
                                     @endif
                                 </div>
                             </div>
                         </div>
                     @endforeach
                     <div>
-                        <i class="fas fa-check bg-success"></i>
+                        <i class="fas fa-check-circle bg-success"></i>
+                        <div class="timeline-item">
+                            <h3 class="timeline-header">
+                                <i class="fas fa-flag-checkered"></i> Projeto Concluído
+                            </h3>
+                        </div>
                     </div>
                 </div>
             </div>
