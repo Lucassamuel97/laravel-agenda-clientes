@@ -12,9 +12,9 @@
 
 @section('content_body')
     <div class="row">
-        {{-- Total de Produtos --}}
+        {{-- Total de Obras --}}
         <div class="col-lg-3 col-6">
-            <x-adminlte-info-box title="Produtos Cadastrados" text="{{ $totalProducts }}" icon="fas fa-box" theme="primary" url="{{ route('products.index') }}" url-text="Ver Produtos"/>
+            <x-adminlte-info-box title="Obras Cadastradas" text="{{ $totalObras }}" icon="fas fa-box" theme="primary" url="{{ route('obras.index') }}" url-text="Ver Obras"/>
         </div>
         {{-- Total de Usuários --}}
         <div class="col-lg-3 col-6">

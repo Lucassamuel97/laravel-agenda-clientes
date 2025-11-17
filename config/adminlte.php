@@ -333,12 +333,12 @@ return [
             'url' => 'admin/blog',
             'can' => 'manage-blog',
         ],
-        [
-            'text' => 'Produtos',
-            'url' => 'products',
-            'icon' => 'fas fa-box',
-            'active' => ['products*'],
-        ],
+        // [
+        //     'text' => 'Produtos',
+        //     'url' => 'products',
+        //     'icon' => 'fas fa-box',
+        //     'active' => ['products*'],
+        // ],
         [
             'text' => 'Clientes',
             'url' => 'customers',
